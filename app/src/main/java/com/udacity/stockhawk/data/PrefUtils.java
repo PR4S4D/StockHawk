@@ -2,13 +2,18 @@ package com.udacity.stockhawk.data;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import com.udacity.stockhawk.R;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.udacity.stockhawk.data.Contract.Quote.COLUMN_HISTORY;
+import static com.udacity.stockhawk.data.Contract.Quote.COLUMN_SYMBOL;
 
 public final class PrefUtils {
 

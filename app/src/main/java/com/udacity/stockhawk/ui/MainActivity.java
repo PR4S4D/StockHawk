@@ -23,6 +23,7 @@ import android.widget.Toast;
 import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.data.PrefUtils;
+import com.udacity.stockhawk.data.StockConstants;
 import com.udacity.stockhawk.sync.QuoteSyncJob;
 
 import butterknife.BindView;
@@ -31,7 +32,9 @@ import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
         SwipeRefreshLayout.OnRefreshListener,
-        StockAdapter.StockAdapterOnClickHandler {
+        StockAdapter.StockAdapterOnClickHandler, StockConstants {
+    public static final String ACTION_DATA_UPDATED =
+            "com.udacity.stockhawk.ui.ACTION_DATA_UPDATED";
 
     private static final int STOCK_LOADER = 0;
     @SuppressWarnings("WeakerAccess")
@@ -47,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onClick(String symbol) {
-        Intent graphIntent = new Intent(this,GraphActivity.class);
-        graphIntent.putExtra("symbol",symbol);
+        Intent graphIntent = new Intent(this, GraphActivity.class);
+        graphIntent.putExtra(SYMBOL, symbol);
         startActivity(graphIntent);
         Timber.d("Symbol clicked: %s", symbol);
     }
@@ -63,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         adapter = new StockAdapter(this, this);
         stockRecyclerView.setAdapter(adapter);
         stockRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
 
         swipeRefreshLayout.setOnRefreshListener(this);
         swipeRefreshLayout.setRefreshing(true);
@@ -81,13 +85,26 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 String symbol = adapter.getSymbolAtPosition(viewHolder.getAdapterPosition());
                 PrefUtils.removeStock(MainActivity.this, symbol);
-                getContentResolver().delete(Contract.Quote.makeUriForStock(symbol), null, null);
+                long id = getContentResolver().delete(Contract.Quote.makeUriForStock(symbol), null, null);
+                Timber.d("long"+id);
+
+                Toast.makeText(getApplicationContext(), symbol + " " + getString(R.string.deleted_msg), Toast.LENGTH_SHORT).show();
+                 updateWidgets();
             }
+
+            
         }).attachToRecyclerView(stockRecyclerView);
 
 
     }
 
+    public void updateWidgets() {
+        Context context = MainActivity.this;
+        // Setting the package ensures that only components in our app will receive the broadcast
+        Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED)
+                .setPackage(context.getPackageName());
+        context.sendBroadcast(dataUpdatedIntent);
+    }
     private boolean networkUp() {
         ConnectivityManager cm =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -132,6 +149,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             PrefUtils.addStock(this, symbol);
             QuoteSyncJob.syncImmediately(this);
+
         }
     }
 

@@ -14,8 +14,12 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.udacity.stockhawk.R;
+import com.udacity.stockhawk.data.PrefUtils;
+
+import java.util.Set;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -68,7 +72,15 @@ public class AddStockDialog extends DialogFragment {
     private void addStock() {
         Activity parent = getActivity();
         if (parent instanceof MainActivity) {
-            ((MainActivity) parent).addStock(stock.getText().toString());
+            String symbol = stock.getText().toString();
+            Set<String> stocks = PrefUtils.getStocks(parent);
+            if(null != stocks){
+                if(stocks.contains(symbol)){
+                    Toast.makeText(parent, R.string.stock_exits,Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+            ((MainActivity) parent).addStock(symbol);
         }
         dismissAllowingStateLoss();
     }

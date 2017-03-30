@@ -26,11 +26,12 @@ public class StockWidget extends AppWidgetProvider {
         for (int widgetId : appWidgetIds) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.stock_widget);
             setWidgetOnClick(context, views);
-            views.setRemoteAdapter(R.id.stock_list,new Intent(context,StockWidgetService.class));
-            views.setEmptyView(R.id.stock_list,R.id.widget_empty);
+            views.setRemoteAdapter(R.id.stock_list, new Intent(context, StockWidgetService.class));
+            views.setEmptyView(R.id.stock_list, R.id.widget_empty);
             appWidgetManager.updateAppWidget(widgetId, views);
 
         }
+        super.onUpdate(context,appWidgetManager,appWidgetIds);
 
 
     }
@@ -51,10 +52,12 @@ public class StockWidget extends AppWidgetProvider {
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(
-                new ComponentName(context, getClass()));
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.stock_list);
+        if (MainActivity.ACTION_DATA_UPDATED.equals(intent.getAction())) {
+            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(
+                    new ComponentName(context, getClass()));
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.stock_list);
+        }
 
     }
 
