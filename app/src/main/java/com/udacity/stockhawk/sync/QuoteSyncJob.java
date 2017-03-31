@@ -86,49 +86,50 @@ public final class QuoteSyncJob {
 
 
                 Stock stock = quotes.get(symbol);
-                StockQuote quote = stock.getQuote();
 
-                if(null == quote.getPrice()){
-                    //ref :stackOverFlow
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(context, symbol+" "+context.getString(R.string.no_stock), Toast.LENGTH_LONG).show();
-                        }
-                    });
-                    PrefUtils.removeStock(context,symbol);
-                    continue;
+
+                if (null == stock) {
+                    makeToast(context, symbol);
+                    PrefUtils.removeStock(context, symbol);
+                } else {
+                    StockQuote quote = stock.getQuote();
+                    if (null == quote.getPrice()) {
+                        makeToast(context, symbol);
+
+                        PrefUtils.removeStock(context, symbol);
+                        continue;
+                    }
+
+
+                    float price = quote.getPrice().floatValue();
+                    float change = quote.getChange().floatValue();
+                    float percentChange = quote.getChangeInPercent().floatValue();
+
+
+                    List<HistoricalQuote> history = stock.getHistory(from, to, Interval.WEEKLY);
+/*                    List<BigDecimal> maxValues = new ArrayList<>();
+                    List<Long> times = new ArrayList<>();*/
+
+                    StringBuilder historyBuilder = new StringBuilder();
+
+                    for (HistoricalQuote it : history) {
+                        historyBuilder.append(it.getDate().getTimeInMillis());
+                        historyBuilder.append(", ");
+                        historyBuilder.append(it.getClose());
+                        historyBuilder.append("\n");
+                    }
+
+                    ContentValues quoteCV = new ContentValues();
+                    quoteCV.put(Contract.Quote.COLUMN_SYMBOL, symbol);
+                    quoteCV.put(Contract.Quote.COLUMN_PRICE, price);
+                    quoteCV.put(Contract.Quote.COLUMN_PERCENTAGE_CHANGE, percentChange);
+                    quoteCV.put(Contract.Quote.COLUMN_ABSOLUTE_CHANGE, change);
+
+
+                    quoteCV.put(Contract.Quote.COLUMN_HISTORY, historyBuilder.toString());
+
+                    quoteCVs.add(quoteCV);
                 }
-
-                float price = quote.getPrice().floatValue();
-                float change = quote.getChange().floatValue();
-                float percentChange = quote.getChangeInPercent().floatValue();
-
-
-                List<HistoricalQuote> history = stock.getHistory(from, to, Interval.WEEKLY);
-                List<BigDecimal> maxValues =new ArrayList<>();
-                List<Long> times =new ArrayList<>();
-
-                StringBuilder historyBuilder = new StringBuilder();
-
-                for (HistoricalQuote it : history) {
-                    historyBuilder.append(it.getDate().getTimeInMillis());
-                    historyBuilder.append(", ");
-                    historyBuilder.append(it.getClose());
-                    historyBuilder.append("\n");
-                }
-
-                ContentValues quoteCV = new ContentValues();
-                quoteCV.put(Contract.Quote.COLUMN_SYMBOL, symbol);
-                quoteCV.put(Contract.Quote.COLUMN_PRICE, price);
-                quoteCV.put(Contract.Quote.COLUMN_PERCENTAGE_CHANGE, percentChange);
-                quoteCV.put(Contract.Quote.COLUMN_ABSOLUTE_CHANGE, change);
-
-
-                quoteCV.put(Contract.Quote.COLUMN_HISTORY, historyBuilder.toString());
-
-                quoteCVs.add(quoteCV);
-
             }
 
             context.getContentResolver()
@@ -142,6 +143,16 @@ public final class QuoteSyncJob {
         } catch (IOException exception) {
             Timber.e(exception, "Error fetching stock quotes");
         }
+    }
+
+    private static void makeToast(final Context context, final String symbol) {
+        //ref :stackOverFlow
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(context, symbol + " " + context.getString(R.string.no_stock), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private static void schedulePeriodic(Context context) {
@@ -196,7 +207,6 @@ public final class QuoteSyncJob {
     }
 
     private static void updateWidgets(Context context) {
-        // Setting the package ensures that only components in our app will receive the broadcast
         Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED)
                 .setPackage(context.getPackageName());
         context.sendBroadcast(dataUpdatedIntent);

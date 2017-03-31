@@ -93,6 +93,13 @@ public class StockWidgetFactory implements RemoteViewsService.RemoteViewsFactory
         float rawAbsoluteChange = cursor.getFloat(Contract.Quote.POSITION_ABSOLUTE_CHANGE);
         float percentageChange = cursor.getFloat(Contract.Quote.POSITION_PERCENTAGE_CHANGE);
 
+        if (rawAbsoluteChange > 0) {
+            remoteViews.setInt(R.id.change,"setBackgroundResource",R.drawable.percent_change_pill_green);
+        } else {
+            remoteViews.setInt(R.id.change,"setBackgroundResource",R.drawable.percent_change_pill_red);
+        }
+
+
         String change = dollarFormatWithPlus.format(rawAbsoluteChange);
         String percentage = percentageFormat.format(percentageChange / 100);
         if (PrefUtils.getDisplayMode(context).equals(context.getString(R.string.pref_display_mode_absolute_key))) {

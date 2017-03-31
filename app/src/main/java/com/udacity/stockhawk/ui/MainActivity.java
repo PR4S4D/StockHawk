@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         SwipeRefreshLayout.OnRefreshListener,
         StockAdapter.StockAdapterOnClickHandler, StockConstants {
     public static final String ACTION_DATA_UPDATED =
-            "com.udacity.stockhawk.ui.ACTION_DATA_UPDATED";
+            "com.udacity.stockhawk.ACTION_DATA_UPDATED";
 
     private static final int STOCK_LOADER = 0;
     @SuppressWarnings("WeakerAccess")
@@ -86,13 +86,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 String symbol = adapter.getSymbolAtPosition(viewHolder.getAdapterPosition());
                 PrefUtils.removeStock(MainActivity.this, symbol);
                 long id = getContentResolver().delete(Contract.Quote.makeUriForStock(symbol), null, null);
-                Timber.d("long"+id);
 
-                Toast.makeText(getApplicationContext(), symbol + " " + getString(R.string.deleted_msg), Toast.LENGTH_SHORT).show();
-                 updateWidgets();
+                if(id > 0) {
+                    Toast.makeText(getApplicationContext(), symbol + " " + getString(R.string.deleted_msg), Toast.LENGTH_SHORT).show();
+                    updateWidgets();
+
+                    QuoteSyncJob.syncImmediately(MainActivity.this);
+                }
             }
 
-            
+
         }).attachToRecyclerView(stockRecyclerView);
 
 
